@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+//using System;
 
 public class EnemyMovementStartRight : MonoBehaviour
 {
@@ -19,7 +20,7 @@ public class EnemyMovementStartRight : MonoBehaviour
     bool wait;
     bool attack;
 
-    
+    int attackBonuseMultiplier = 3;
     [SerializeField] bool fightHuman;
 
     [SerializeField] float damageEditor = 50;
@@ -31,13 +32,24 @@ public class EnemyMovementStartRight : MonoBehaviour
 
     float attackReset = .5f;
 
-    int customSeed = 55;
+    public int customSeed;
+    int hour;
+    int minutes;
+    int seconds;
+    int miliseconds;
 
+    EnemyHealth selfHealthEnemy;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
         // targetGameobject = FindObjectOfType<MonsterMove>().gameObject;
+        selfHealthEnemy = GetComponent<EnemyHealth>();
+
+        hour = System.DateTime.Now.Hour;
+        minutes = System.DateTime.Now.Minute;
+        seconds = System.DateTime.Now.Second;
+        miliseconds = System.DateTime.Now.Millisecond;
 
         if (fightHuman)
         {
@@ -52,14 +64,16 @@ public class EnemyMovementStartRight : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Random.InitState(customSeed);
+        customSeed = (hour + minutes + seconds + miliseconds) * (hour + minutes + seconds + miliseconds) ;
+        Random.InitState(customSeed );
     }
 
     // Update is called once per frame
     void Update()
     {
-       // NextState();
+       
         DistanceToEnemy();
+        AttackBonus();
 
 
     }
@@ -71,6 +85,32 @@ public class EnemyMovementStartRight : MonoBehaviour
         Wait();
         // Attack();
         NextState();
+    }
+
+    void AttackBonus()
+    {
+        int increaseAttackOnEnemyHealth;
+        int increaseAttackOnPlayerHealth;
+
+        if (fightHuman)
+        {
+            increaseAttackOnEnemyHealth = (int)(playerHealth.maxHealth / playerHealth.currentHealth); // makes number bigger that 1 to mutiply with
+
+            increaseAttackOnPlayerHealth = (int)(selfHealthEnemy.maxHealth / selfHealthEnemy.currentHealth);
+            attackbonus = increaseAttackOnEnemyHealth * attackBonuseMultiplier + increaseAttackOnPlayerHealth * attackBonuseMultiplier*2 - 4;
+        }
+        else
+        {
+            increaseAttackOnEnemyHealth = (int)(enemyHealth.maxHealth / enemyHealth.currentHealth); // makes number bigger that 1 to mutiply with
+
+            increaseAttackOnPlayerHealth = (int)(selfHealthEnemy.maxHealth / selfHealthEnemy.currentHealth);
+            attackbonus = increaseAttackOnEnemyHealth * attackBonuseMultiplier + increaseAttackOnPlayerHealth * attackBonuseMultiplier*2 - 4;
+        }
+
+        if (attackbonus >= 20)
+        {
+            attackbonus = 20;
+        }
     }
 
     void GiveDamage(float damage)
@@ -205,22 +245,22 @@ public class EnemyMovementStartRight : MonoBehaviour
 
             int newState = Random.Range(1, 101);
 
-            if (newState <= (25 - attackbonus))
+            if (newState <= (20 - attackbonus))
             {
                 wait = true;
             }
 
-            if (newState > (25 - attackbonus) && newState <= (50 - attackbonus))
+            if (newState > (20 - attackbonus) && newState <= (40 - attackbonus))
             {
                 moveBackward = true;
             }
 
-            if (newState > (50 - attackbonus) && newState <= (75 - attackbonus))
+            if (newState > (40 - attackbonus) && newState <= (60 - attackbonus))
             {
                 moveForward = true;
             }
 
-            if (newState > (75 - attackbonus) && attackReset < 0)
+            if (newState > (60 - attackbonus) && attackReset < 0)
             {
                 
                 attack = true;

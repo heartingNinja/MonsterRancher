@@ -11,8 +11,9 @@ public class EnemyMonsterMovement : MonoBehaviour
     [SerializeField] Slider distanceToPlayerSlider;
     [SerializeField] float speed = 4; // get this from scriptable object in future
 
-                                      // if player has more health from start less attacking, if enemy has less health from start increase attacking. change the attackbonus
-    [SerializeField] int attackbonus = 10; // if attackbonus increases it takes down wait chance. max will be 25 attack. This gives 50% attack and 50% move. 
+                                      // the more health you have less attack you have, for less health of enemy more attack will be added for attackbonus;
+    [SerializeField] int attackbonus = 0; // if attackbonus increases it takes down wait chance. max will be 25 attack. This gives 50% attack and 50% move. 
+    int attackBonuseMultiplier = 3;
     Rigidbody rb;
     bool moveForward;
     bool moveBackward;
@@ -31,14 +32,20 @@ public class EnemyMonsterMovement : MonoBehaviour
 
     [SerializeField] float attackReset = .5f;
 
+    EnemyHealth selfHealthEnemy;
+    EnemyWill enemyWill;
+
 
 
     private void Awake()
     {
+        enemyWill = GetComponent<EnemyWill>();
         rb = GetComponent<Rigidbody>();
-       // targetGameobject = FindObjectOfType<MonsterMove>().gameObject;
+        // targetGameobject = FindObjectOfType<MonsterMove>().gameObject;
 
-        if(fightHuman)
+        selfHealthEnemy = GetComponent<EnemyHealth>();
+
+        if (fightHuman)
         {
             targetGameobject = FindObjectOfType<MonsterMove>().gameObject;
             playerHealth = FindObjectOfType<PlayerHealth>();
@@ -59,9 +66,12 @@ public class EnemyMonsterMovement : MonoBehaviour
     {
        // NextState();
         DistanceToEnemy();
+        AttackBonus();
 
 
     }
+
+   
 
     private void FixedUpdate()
     {
@@ -71,6 +81,32 @@ public class EnemyMonsterMovement : MonoBehaviour
         // Attack();
 
         NextState();
+    }
+
+    void AttackBonus()
+    {
+        int increaseAttackOnEnemyHealth;
+        int increaseAttackOnPlayerHealth;
+
+        if (fightHuman)
+        {
+            increaseAttackOnEnemyHealth = (int)(playerHealth.maxHealth / playerHealth.currentHealth); // makes number bigger that 1 to mutiply with
+
+            increaseAttackOnPlayerHealth = (int)(selfHealthEnemy.maxHealth / selfHealthEnemy.currentHealth);
+            attackbonus = increaseAttackOnEnemyHealth * attackBonuseMultiplier + increaseAttackOnPlayerHealth * attackBonuseMultiplier*2 - 4;
+        }
+        else
+        {
+            increaseAttackOnEnemyHealth = (int)(enemyHealth.maxHealth / enemyHealth.currentHealth); // makes number bigger that 1 to mutiply with
+
+            increaseAttackOnPlayerHealth = (int)(selfHealthEnemy.maxHealth / selfHealthEnemy.currentHealth);
+            attackbonus = increaseAttackOnEnemyHealth * attackBonuseMultiplier + increaseAttackOnPlayerHealth * attackBonuseMultiplier*2 - 4;
+        }
+
+        if(attackbonus >= 20)
+        {
+            attackbonus = 20;
+        }
     }
 
     void GiveDamage(float damage)
@@ -201,22 +237,22 @@ public class EnemyMonsterMovement : MonoBehaviour
         {
             int newState = Random.Range(1, 101);
                                
-            if(newState <=(25 - attackbonus))
+            if(newState <=(20 - attackbonus))
             {
                 wait = true;             
             }
 
-            if(newState >(25 -attackbonus) && newState <=(50 - attackbonus))
+            if(newState >(20 -attackbonus) && newState <=(40 - attackbonus))
             {
                 moveBackward = true;
             }
 
-            if(newState > (50- attackbonus) && newState <= (75-attackbonus))
+            if(newState > (40- attackbonus) && newState <= (60-attackbonus))
             {
                 moveForward = true;
             }
 
-            if(newState >(75- attackbonus) && attackReset < 0)
+            if(newState >(60- attackbonus) && attackReset < 0)
             {
                 attack = true;
                 Attack();
