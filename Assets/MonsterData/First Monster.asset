@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4382e259433dd43478580626b53879ec, type: 3}
+  m_Name: First Monster
+  m_EditorClassIdentifier: 
+  name: First
+  life: 1000
+  power: 500
+  intelligence: 500
+  skill: 100
+  speed: 500
+  defense: 400
+  attackClose: {fileID: 0}
+  attackCLosePowerBool: 0
+  attackDamageClose: 10
+  willCostClose: 0
+  attackCloseMid: {fileID: 0}
+  attackCloseMidPowerBool: 0
+  attackDamageCloseMid: 10
+  willCostCloseMid: 0
+  attackFarMid: {fileID: 0}
+  attackFarMidPowerBool: 0
+  attackDamageFarMid: 20
+  willCostFarMid: 0
+  attackFar: {fileID: 0}
+  attackFarPowerBool: 0
+  attackDamageFar: 20
+  willCostFar: 0

@@ -5,11 +5,15 @@ using UnityEngine.UI;
 
 public class EnemyMonsterMovement : MonoBehaviour
 {
+    [SerializeField] MakeMonsterSO thisMonsterStats;
+    [SerializeField] MakeMonsterSO enemyMonsterStats;
+
     //Transform targetDestination;
     GameObject targetGameobject;
     [SerializeField] GameObject leftEdge;
     [SerializeField] Slider distanceToPlayerSlider;
     [SerializeField] float speed = 4; // get this from scriptable object in future
+    GameManger gameManger;
 
                                       // the more health you have less attack you have, for less health of enemy more attack will be added for attackbonus;
     [SerializeField] int attackbonus = 0; // if attackbonus increases it takes down wait chance. max will be 25 attack. This gives 50% attack and 50% move. 
@@ -20,10 +24,12 @@ public class EnemyMonsterMovement : MonoBehaviour
     bool wait;
     bool attack;
 
-   
-    [SerializeField] bool fightHuman;
+    public bool enemyDodge;
 
-    [SerializeField] float damage = 50;
+   
+    [SerializeField] public bool fightHuman;
+
+    public float damage = 50;
 
     [SerializeField] float timeForState = 2;
     float sliderValue;
@@ -35,12 +41,18 @@ public class EnemyMonsterMovement : MonoBehaviour
     EnemyHealth selfHealthEnemy;
     EnemyWill enemyWill;
 
+   public int powerVsDefenseBonus; // = thisMonsterStats.power - enemyMonsterStats.defense; // sets increase to damage or decrease, can be 998+ to 998-
+   public int dodgeBonus; // = thisMonsterStats.skill - enemyMonsterStats.speed; // sets increase to dodge or decreae, can be 998+ to 998-
 
+   public int dodgeBase = 100; // base dodge if speed an skill, 100 should be 10%
+   public int dodgeRollRandom; // =Random.Range(1, 1001); // what number will be choose to see if enemy dodges
+  // public int dodge; // = dodgeBase + dodgeBonus; // increase or decrease to dodge
 
     private void Awake()
     {
         enemyWill = GetComponent<EnemyWill>();
         rb = GetComponent<Rigidbody>();
+        gameManger = FindObjectOfType<GameManger>();
         // targetGameobject = FindObjectOfType<MonsterMove>().gameObject;
 
         selfHealthEnemy = GetComponent<EnemyHealth>();
@@ -53,11 +65,14 @@ public class EnemyMonsterMovement : MonoBehaviour
         else
         {
             targetGameobject = enemyHealth.gameObject;
+           
         }
     }
     // Start is called before the first frame update
     void Start()
     {
+         powerVsDefenseBonus = thisMonsterStats.power - enemyMonsterStats.defense; // sets increase to damage or decrease, can be 998+ to 998-
+        dodgeBonus = enemyMonsterStats.speed - thisMonsterStats.skill;  // sets increase to dodge or decreae, can be 998+ to 998-
         
     }
 
@@ -67,8 +82,9 @@ public class EnemyMonsterMovement : MonoBehaviour
        // NextState();
         DistanceToEnemy();
         AttackBonus();
+        DamageToGive();
 
-
+        
     }
 
    
@@ -109,18 +125,186 @@ public class EnemyMonsterMovement : MonoBehaviour
         }
     }
 
+    void DamageToGive()
+    {
+        int damageStartValue;
+        dodgeRollRandom = Random.Range(1, 1001);
+
+
+        int dodge = dodgeBase + dodgeBonus; // increase or decrease to dodge
+
+        
+
+        
+        if (sliderValue < .25f)
+        {
+            damageStartValue = thisMonsterStats.attackDamageClose;
+            
+          if(dodgeRollRandom > dodge)
+            {
+                enemyDodge = false;
+
+                if (powerVsDefenseBonus < 0)
+                {
+                    damage = damageStartValue + (powerVsDefenseBonus / 10);
+
+                    if (damage < 0) // can not give negitive or 0 damage
+                    {
+                        damage = 1;
+                    }
+                }
+                else
+                {
+                    damage = damageStartValue + powerVsDefenseBonus;
+                }
+            }
+            else
+            {
+                enemyDodge = true;
+              
+            }
+            
+          
+           
+        }
+
+        if (sliderValue >= .25f && sliderValue < .50f)
+        {
+            damageStartValue = thisMonsterStats.attackDamageCloseMid;
+
+            if(dodgeRollRandom > dodge)
+            {
+                enemyDodge = false;
+
+                if (powerVsDefenseBonus < 0)
+                {
+                    damage = damageStartValue + (powerVsDefenseBonus / 10);
+
+                    if (damage < 0)
+                    {
+                        damage = 1;
+                    }
+                }
+                else
+                {
+                    damage = damageStartValue + powerVsDefenseBonus;
+                }
+            }
+            else
+            {
+                enemyDodge = true;
+               
+            }
+
+            
+           
+           
+        }
+
+        if (sliderValue >= .50f && sliderValue < .75f)
+        {
+            damageStartValue = thisMonsterStats.attackDamageFarMid;
+
+         
+
+            if (dodgeRollRandom > dodge)
+            {
+                enemyDodge = false;
+
+                if (powerVsDefenseBonus < 0)
+                {
+                    damage = damageStartValue + (powerVsDefenseBonus / 10);
+
+                    if (damage < 0)
+                    {
+                        damage = 1;
+                    }
+                }
+                else
+                {
+                    damage = damageStartValue + powerVsDefenseBonus;
+                }
+            }
+            else
+            {
+                enemyDodge = true;
+               
+            }
+
+            
+
+          
+           
+        }
+
+        if (sliderValue >= .75f)
+        {
+            damageStartValue = thisMonsterStats.attackDamageFar;
+
+            
+
+            if (dodgeRollRandom > dodge)
+            {
+                enemyDodge = false;
+
+                if (powerVsDefenseBonus < 0)
+                {
+                    damage = damageStartValue + (powerVsDefenseBonus / 10);
+
+                    if (damage < 0)
+                    {
+                        damage = 1;
+                    }
+                }
+                else
+                {
+                    damage = damageStartValue + powerVsDefenseBonus;
+                }
+            }
+            else
+            {
+                damage = 0;
+                enemyDodge = true;
+               
+            }
+
+           
+
+            
+            
+        }
+    }
+
     void GiveDamage(float damage)
     {
+       
 
         if (fightHuman)
         {
+           
             playerHealth.currentHealth -= damage;
+            gameManger.PostDamageCodeRight();
         }
         else
         {
-            enemyHealth.currentHealth -= damage;
+            if(enemyDodge == false)
+            {
+                
+                enemyHealth.currentHealth -= damage;
+                gameManger.PostDamageCodeRight();
+                
+            }
+            else
+            {
+               
+                gameManger.PostDodgeRight();
+                Debug.Log("Dodge Left Monster");
+                enemyDodge = false;
+            }
+            
         }
 
+        
         attack = false;
     }
 
@@ -189,8 +373,8 @@ public class EnemyMonsterMovement : MonoBehaviour
     {
        
         if (attack)
-        {
-            
+        {         
+
             rb.velocity = new Vector3(0, 0, 0);
             timeForState -= Time.deltaTime;
 
@@ -254,6 +438,7 @@ public class EnemyMonsterMovement : MonoBehaviour
 
             if(newState >(60- attackbonus) && attackReset < 0)
             {
+                //DamageToGive();
                 attack = true;
                 Attack();
             }

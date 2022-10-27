@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class EnemyHealth : MonoBehaviour
 {
+    [SerializeField] MakeMonsterSO monster;
     [SerializeField] Slider healthSlider;
 
     public float maxHealth = 1000;
@@ -12,6 +13,7 @@ public class EnemyHealth : MonoBehaviour
 
     private void Awake()
     {
+        maxHealth = monster.life;
         currentHealth = maxHealth;
         healthSlider.maxValue = maxHealth;
        
