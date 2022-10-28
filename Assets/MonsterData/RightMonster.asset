@@ -16,22 +16,26 @@ MonoBehaviour:
   life: 1000
   power: 500
   intelligence: 500
-  skill: 500
-  speed: 500
+  skill: 600
+  speed: 400
   defense: 300
-  attackClose: {fileID: 0}
+  attackClose: {fileID: 21300000, guid: ff4be3be4794f214b9dad6a419043928, type: 3}
   attackCLosePowerBool: 0
   attackDamageClose: 10
-  willCostClose: 0
-  attackCloseMid: {fileID: 0}
+  willCostClose: 10
+  hitPercentClose: 100
+  attackCloseMid: {fileID: 21300000, guid: bd29cc2a8ba018b429ccda3110486c5a, type: 3}
   attackCloseMidPowerBool: 0
   attackDamageCloseMid: 10
-  willCostCloseMid: 0
-  attackFarMid: {fileID: 0}
+  willCostCloseMid: 10
+  hitPercentCloseMid: 50
+  attackFarMid: {fileID: 21300000, guid: 65ca240589afa464aaf3c73ccc15aa26, type: 3}
   attackFarMidPowerBool: 0
   attackDamageFarMid: 20
-  willCostFarMid: 0
-  attackFar: {fileID: 0}
+  willCostFarMid: 20
+  hitPercentFarMid: 50
+  attackFar: {fileID: 21300000, guid: 6b7b330c2672a2a47a6f8aeb8a27a620, type: 3}
   attackFarPowerBool: 0
-  attackDamageFar: 20
-  willCostFar: 0
+  attackDamageFar: 30
+  willCostFar: 20
+  hitPercentFar: 20

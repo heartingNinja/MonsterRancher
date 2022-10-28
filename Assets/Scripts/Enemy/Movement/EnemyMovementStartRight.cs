@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 //using System;
 
 public class EnemyMovementStartRight : MonoBehaviour
@@ -9,15 +10,19 @@ public class EnemyMovementStartRight : MonoBehaviour
     [SerializeField] MakeMonsterSO thisMonsterStats;
     [SerializeField] MakeMonsterSO enemyMonsterStats;
 
+    public int hitChanceForUI;
+    [SerializeField] TextMeshProUGUI hitChanceText;
+
     //Transform targetDestination;
     GameObject targetGameobject;
     [SerializeField] GameObject rightEdge;
     [SerializeField] Slider distanceToPlayerSlider;
     [SerializeField] float speed = 4; // get this from scriptable object in future
     GameManger gameManger;
+    
 
     // if player has more health from start less attacking, if enemy has less health from start increase attacking. change the attackbonus
-    [SerializeField] int attackbonus = 0; // if attackbonus increases it takes down wait chance. max will be 25 attack. This gives 50% attack and 50% move. 
+    [SerializeField] float attackbonus = 0; // if attackbonus increases it takes down wait chance. max will be 25 attack. This gives 50% attack and 50% move. 
     Rigidbody rb;
     bool moveForward;
     bool moveBackward;
@@ -50,9 +55,30 @@ public class EnemyMovementStartRight : MonoBehaviour
     public int dodgeBase = 100; // base dodge if speed an skill, 100 should be 10%
     public int dodgeRollRandom; // =Random.Range(1, 1001); // what number will be choose to see if enemy dodges
     public bool enemyDodge;
+    int dodge;
+
+    public bool enemyMiss;
+
+    public int skillbase = 25;
+    public int skillBonus;
+    public int skillRollRandom;
+
+    public int attackRandomRoll;
+    public int hitChanceBonus;
+
+    int willCostClose;
+    int willCostMidClose;
+    int willCostMidFar;
+    int willCostFar;
+
+    public int willTaken;
+    public bool willToAttackBool = true;
+
+    EnemyWill enemyWill;
 
     private void Awake()
     {
+        enemyWill = GetComponent<EnemyWill>();
         rb = GetComponent<Rigidbody>();
         // targetGameobject = FindObjectOfType<MonsterMove>().gameObject;
         selfHealthEnemy = GetComponent<EnemyHealth>();
@@ -80,7 +106,14 @@ public class EnemyMovementStartRight : MonoBehaviour
         Random.InitState(customSeed );
 
         powerVsDefenseBonus = thisMonsterStats.power - enemyMonsterStats.defense; // sets increase to damage or decrease, can be 998+ to 998-
-        dodgeBonus = enemyMonsterStats.speed - thisMonsterStats.skill;  // sets increase to dodge or decreae, can be 998+ to 998-
+        dodgeBonus = enemyMonsterStats.speed - thisMonsterStats.speed;  // sets increase to dodge or decreae, can be 998+ to 998-
+        skillBonus = thisMonsterStats.skill - enemyMonsterStats.skill; // sets increase or decrease to skill. Skill decides crit %
+
+        // will need a 2nd for 2nd attacks with a bool to choose what one to use. Can use enemy data for attack and choose attack from bool
+        willCostClose = thisMonsterStats.willCostClose;
+        willCostMidClose = thisMonsterStats.willCostCloseMid;
+        willCostMidFar = thisMonsterStats.willCostFarMid;
+        willCostFar = thisMonsterStats.willCostFar;
     }
 
     // Update is called once per frame
@@ -91,7 +124,21 @@ public class EnemyMovementStartRight : MonoBehaviour
         AttackBonus();
         DamageToGive();
 
+        
 
+        hitChanceForUI = (hitChanceBonus * (100 - (dodge/10)))/100;
+
+        if(hitChanceForUI > 100)
+        {
+            hitChanceForUI = 99;
+        }
+
+        if(hitChanceForUI < 0)
+        {
+            hitChanceForUI = 0;
+        }
+
+        hitChanceText.text = hitChanceForUI.ToString();
     }
 
 
@@ -106,7 +153,7 @@ public class EnemyMovementStartRight : MonoBehaviour
         NextState();
     }
 
-    void AttackBonus()
+    void AttackBonus() // add in will amount to increase attack bonus, later time left, less time moare attack
     {
         int increaseAttackOnEnemyHealth;
         int increaseAttackOnPlayerHealth;
@@ -123,13 +170,23 @@ public class EnemyMovementStartRight : MonoBehaviour
             increaseAttackOnEnemyHealth = (int)(enemyHealth.maxHealth / enemyHealth.currentHealth); // makes number bigger that 1 to mutiply with
 
             increaseAttackOnPlayerHealth = (int)(selfHealthEnemy.maxHealth / selfHealthEnemy.currentHealth);
-            attackbonus = increaseAttackOnEnemyHealth * attackBonuseMultiplier + increaseAttackOnPlayerHealth * attackBonuseMultiplier * 2 - 4;
+            attackbonus = (100 -(increaseAttackOnEnemyHealth * attackBonuseMultiplier + increaseAttackOnPlayerHealth * attackBonuseMultiplier * 2 - 4 + enemyWill.willCurrent))/100;
         }
 
-        if (attackbonus >= 20)
+        if(attackbonus < 0)
         {
-            attackbonus = 20;
+            attackbonus = 0.01f;
         }
+
+        if(attackbonus > 1)
+        {
+            attackbonus = 1;
+        }
+
+     //   if (attackbonus >= 20) // instead of subtracting attackbonus from other stats have them muiltplied by attackbonus. the larger the attack bonus the less attack will be added. use (100-attackbonus)/100, make max attack bonus = 99
+     //   {
+     //       attackbonus = 20;
+     //   }
     }
 
     void DamageToGive()
@@ -137,104 +194,208 @@ public class EnemyMovementStartRight : MonoBehaviour
         int damageStartValue;
         dodgeRollRandom = Random.Range(1, 1001);
 
+        int hitChance;
+        
+        attackRandomRoll = Random.Range(1, 101);
 
-        int dodge = dodgeBase + dodgeBonus; // increase or decrease to dodge
+        dodge = dodgeBase + dodgeBonus; // increase or decrease to dodge
+
+        if(dodge < 0)
+        {
+            dodge = 0;
+        }
 
        
 
-
+        // close
         if (sliderValue < .25f)
         {
+            willTaken = willCostClose;
+
+            if (willCostClose > enemyWill.willCurrent)
+            {
+                willToAttackBool = false;
+            }
+            else
+            {
+                willToAttackBool = true;
+            }
+
             damageStartValue = thisMonsterStats.attackDamageClose;
+            hitChance = thisMonsterStats.hitPercentClose;
+            hitChanceBonus = hitChance + (skillBonus / 100);
+
+            if (hitChanceBonus < hitChance)
+            {
+                hitChanceBonus = hitChance;
+            }
+
+            if (hitChanceBonus > attackRandomRoll)
+            {
+                enemyMiss = false;
+            }
+            else
+            {
+                enemyMiss = true;
+                
+            }
 
             if (dodgeRollRandom > dodge)
-            {
-                enemyDodge = false;
-
-                if (powerVsDefenseBonus < 0)
                 {
-                    damage = damageStartValue + (powerVsDefenseBonus / 10);
+                    enemyDodge = false;
 
-                    if (damage > 0) // can not give negitive or 0 damage
+                    if (powerVsDefenseBonus < 0)
                     {
-                        damage = 1;
+                        damage = damageStartValue + (powerVsDefenseBonus / 10);
+
+                        if (damage > 0) // can not give negitive or 0 damage
+                        {
+                            damage = 1;
+                        }
+                    }
+                    else
+                    {
+                        damage = damageStartValue + powerVsDefenseBonus;
                     }
                 }
                 else
                 {
-                    damage = damageStartValue + powerVsDefenseBonus;
-                }
-            }
-            else
-            {
-                enemyDodge = true;
+                    enemyDodge = true;
 
-            }
+                }
+            
+           
+
+            
 
 
 
         }
 
+        // close mid
         if (sliderValue >= .25f && sliderValue < .50f)
         {
+            willTaken = willCostMidClose;
+
+            if (willCostMidClose > enemyWill.willCurrent)
+            {
+                willToAttackBool = false;
+            }
+            else
+            {
+                willToAttackBool = true;
+            }
+
             damageStartValue = thisMonsterStats.attackDamageCloseMid;
+            hitChance = thisMonsterStats.hitPercentCloseMid;
+            hitChanceBonus = hitChance + (skillBonus / 100);
+
+            if (hitChanceBonus < hitChance)
+            {
+                hitChanceBonus = hitChance;
+            }
+
+            if (hitChanceBonus > attackRandomRoll)
+            {
+                enemyMiss = false;
+            }
+            else
+            {
+                enemyMiss = true;
+            }
 
             if (dodgeRollRandom > dodge)
-            {
-                enemyDodge = false;
-
-                if (powerVsDefenseBonus < 0)
                 {
-                    damage = damageStartValue + (powerVsDefenseBonus / 10);
+                    enemyDodge = false;
 
-                    if (damage < 0)
+                    if (powerVsDefenseBonus < 0)
                     {
-                        damage = 1;
+                        damage = damageStartValue + (powerVsDefenseBonus / 10);
+
+                        if (damage < 0)
+                        {
+                            damage = 1;
+                        }
+                    }
+                    else
+                    {
+                        damage = damageStartValue + powerVsDefenseBonus;
                     }
                 }
                 else
                 {
-                    damage = damageStartValue + powerVsDefenseBonus;
-                }
-            }
-            else
-            {
-                enemyDodge = true;
+                    enemyDodge = true;
 
-            }
+                }
+            
+            
+
+           
 
 
 
 
         }
 
+        // mid far
         if (sliderValue >= .50f && sliderValue < .75f)
         {
-            damageStartValue = thisMonsterStats.attackDamageFarMid;
+            willTaken = willCostMidFar;
+
+            if (willCostMidFar > enemyWill.willCurrent)
+            {
+                willToAttackBool = false;
+            }
+            else
+            {
+                willToAttackBool = true;
+            }
+
+            damageStartValue = thisMonsterStats.attackDamageFarMid;           
+            hitChance = thisMonsterStats.hitPercentFarMid;
+            hitChanceBonus = hitChance + (skillBonus / 100);
+
+            if (hitChanceBonus < hitChance)
+            {
+                hitChanceBonus = hitChance;
+            }
+
+            if (hitChanceBonus > attackRandomRoll)
+            {
+                enemyMiss = false;
+            }
+            else
+            {
+                enemyMiss = true;
+            }
 
             if (dodgeRollRandom > dodge)
-            {
-                enemyDodge = false;
-
-                if (powerVsDefenseBonus < 0)
                 {
-                    damage = damageStartValue + (powerVsDefenseBonus / 10);
+                    enemyDodge = false;
 
-                    if (damage < 0)
+                    if (powerVsDefenseBonus < 0)
                     {
-                        damage = 1;
+                        damage = damageStartValue + (powerVsDefenseBonus / 10);
+
+                        if (damage < 0)
+                        {
+                            damage = 1;
+                        }
+                    }
+                    else
+                    {
+                        damage = damageStartValue + powerVsDefenseBonus;
                     }
                 }
                 else
                 {
-                    damage = damageStartValue + powerVsDefenseBonus;
-                }
-            }
-            else
-            {
-                enemyDodge = true;
+                    enemyDodge = true;
 
-            }
+                }
+            
+           
+
+               
 
 
 
@@ -242,34 +403,71 @@ public class EnemyMovementStartRight : MonoBehaviour
 
         }
 
+        // far
         if (sliderValue >= .75f)
         {
+            willTaken = willCostFar;
+
+            if (willCostFar > enemyWill.willCurrent)
+            {
+                willToAttackBool = false;
+            }
+            else
+            {
+                willToAttackBool = true;
+            }
+
             damageStartValue = thisMonsterStats.attackDamageFar;
 
-            if (dodgeRollRandom > dodge)
+            hitChance = thisMonsterStats.hitPercentFar;
+            hitChanceBonus = hitChance + (skillBonus / 100);
+
+           
+
+            if (hitChanceBonus < hitChance)
             {
-                enemyDodge = false;
+                hitChanceBonus = hitChance;
+            }
 
-                if (powerVsDefenseBonus < 0)
+
+            if (hitChanceBonus > attackRandomRoll)
+            {
+                enemyMiss = false;
+            }
+            else
+            {
+                enemyMiss = true;
+            }
+
+            if (dodgeRollRandom > dodge)
                 {
-                    damage = damageStartValue + (powerVsDefenseBonus / 10);
+                    enemyDodge = false;
 
-                    if (damage < 0)
+                    if (powerVsDefenseBonus < 0)
                     {
-                        damage = 1;
+                        damage = damageStartValue + (powerVsDefenseBonus / 10);
+
+                        if (damage < 0)
+                        {
+                            damage = 1;
+                        }
+                    }
+                    else
+                    {
+                        damage = damageStartValue + powerVsDefenseBonus;
                     }
                 }
                 else
                 {
-                    damage = damageStartValue + powerVsDefenseBonus;
-                }
-            }
-            else
-            {
-                damage = 0;
-                enemyDodge = true;
+                    damage = 0;
+                    enemyDodge = true;
 
-            }
+                }
+            
+           
+
+
+                
 
 
 
@@ -278,34 +476,105 @@ public class EnemyMovementStartRight : MonoBehaviour
         }
     }
 
-    void GiveDamage(float damage)
+    void TakeWill(int willTake) // put this on a manager
     {
+        enemyWill.willCurrent -= willTake;
+    }
 
+    void GiveDamage(float damage) // put on a manger
+    {
+        skillRollRandom = Random.Range(1, 1001);
 
-        if (fightHuman)
+        int skill = 25 + skillBonus;
+
+        if (skill > 500)
         {
-
-            playerHealth.currentHealth -= damage;
-            gameManger.PostDamageCodeLeft();
+            skill = 500;
         }
-        else
+
+        if (skill < 25)
         {
-            if (enemyDodge == false)
+            skill = 25;
+        }
+
+        if(skill > skillRollRandom)
+        {
+            if (fightHuman)
             {
 
-                enemyHealth.currentHealth -= damage;
-                gameManger.PostDamageCodeLeft();
-
+                playerHealth.currentHealth -= damage *2;
+                gameManger.PostCritDamageCodeLeft();
+                TakeWill(willTaken);
             }
             else
             {
+                if (enemyDodge == false && enemyMiss == false)
+                {
 
-                gameManger.PostDodgeLeft();
-                Debug.Log("Dodge Right");
-                enemyDodge = false;
+                    enemyHealth.currentHealth -= damage *2;
+                    gameManger.PostCritDamageCodeLeft();
+                    TakeWill(willTaken);
+                    Debug.Log("Crit Attack");
+
+                }
+                if(enemyDodge == true && enemyMiss == false)
+                {
+
+                    gameManger.PostDodgeLeft();
+                    Debug.Log("Dodge Right");
+                    TakeWill(willTaken);
+                    enemyDodge = false;
+                }
+
+                if(enemyMiss == true)
+                {
+                    gameManger.PostMissAttackLeft();
+                    Debug.Log("Miss Attack");
+                    TakeWill(willTaken);
+                    enemyMiss = false;
+                }
+
             }
-
         }
+        else
+        {
+            if (fightHuman)
+            {
+
+                playerHealth.currentHealth -= damage;
+                gameManger.PostDamageCodeLeft();
+                TakeWill(willTaken);
+            }
+            else
+            {
+                if (enemyDodge == false && enemyMiss == false)
+                {
+
+                    enemyHealth.currentHealth -= damage;
+                    gameManger.PostDamageCodeLeft();
+                    TakeWill(willTaken);
+
+                }
+                if( enemyDodge == true && enemyMiss == false)
+                {
+
+                    gameManger.PostDodgeLeft();
+                    TakeWill(willTaken);
+                    Debug.Log("Dodge Right");
+                    enemyDodge = false;
+                }
+                if(enemyMiss == true)
+                {
+                    gameManger.PostMissAttackLeft();
+                    TakeWill(willTaken);
+                    Debug.Log("Miss Attack");
+                    enemyMiss = false;
+                }
+
+            }
+        }
+
+        
 
 
         attack = false;
@@ -379,35 +648,39 @@ public class EnemyMovementStartRight : MonoBehaviour
         {
 
             rb.velocity = new Vector3(0, 0, 0);
-            timeForState -= Time.deltaTime;
+           // timeForState -= Time.deltaTime;
 
-            if (sliderValue < .25f)
-            {
-                GiveDamage(damage);
-                Debug.Log("Attack Close");
-                attack = false;
-            }
+        //    if (sliderValue < .25f)
+        //    {
+        //        GiveDamage(damage);
+       //         Debug.Log("Attack Close");
+       //         attack = false;
+       //     }
 
-            if (sliderValue >= .25f && sliderValue < .50f)
-            {
-                GiveDamage(damage);
-                Debug.Log("Attack Mid Close");
-                attack = false;
-            }
+       //     if (sliderValue >= .25f && sliderValue < .50f)
+      //      {
+      //          GiveDamage(damage);
+      //          Debug.Log("Attack Mid Close");
+      //          attack = false;
+      //      }
 
-            if (sliderValue >= .50f && sliderValue < .75f)
-            {
-                GiveDamage(damage);
-                Debug.Log("Attack Mid Far");
-                attack = false;
-            }
+     //       if (sliderValue >= .50f && sliderValue < .75f)
+     //       {
+      //          GiveDamage(damage);
+      //          Debug.Log("Attack Mid Far");
+      //          attack = false;
+    //        }
 
-            if (sliderValue >= .75f)
-            {
-                GiveDamage(damage);
-                Debug.Log("Attack Far");
-                attack = false;
-            }
+    //        if (sliderValue >= .75f)
+    //        {
+    //            GiveDamage(damage);
+     //           Debug.Log("Attack Far");
+     //           attack = false;
+     //       }
+
+            GiveDamage(damage);
+            Debug.Log("Attack Far");
+            attack = false;
 
             attackReset = .5f;
         }
@@ -424,22 +697,23 @@ public class EnemyMovementStartRight : MonoBehaviour
         {
             int newState = Random.Range(1, 101);
 
-            if (newState <= (20 - attackbonus))
+            // test insted of - * newstate
+            if (newState <= 20 * attackbonus) //(20 - attackbonus))
             {
                 wait = true;
             }
 
-            if (newState > (20 - attackbonus) && newState <= (40 - attackbonus))
+            if (newState > (20 * attackbonus) && newState <= (40 * attackbonus)) //(20 - attackbonus) && newState <= (40 - attackbonus))
             {
                 moveBackward = true;
             }
 
-            if (newState > (40 - attackbonus) && newState <= (60 - attackbonus))
+            if (newState > (40 * attackbonus) && newState <= (60 * attackbonus))//(40 - attackbonus) && newState <= (60 - attackbonus))
             {
                 moveForward = true;
             }
 
-            if (newState > (60 - attackbonus) && attackReset < 0)
+            if (newState > (60 * attackbonus) && attackReset < 0 && willToAttackBool)//(60 - attackbonus) && attackReset < 0)
             {
                 //DamageToGive();
                 attack = true;
@@ -460,12 +734,12 @@ public class EnemyMovementStartRight : MonoBehaviour
         {
             int newState = Random.Range(1, 101);
 
-            if (newState <= (50 - attackbonus))
+            if (newState <= (50 * attackbonus) && attackReset > 0)
             {
                 moveBackward = true;
             }
 
-            if (newState > (50 - attackbonus) && attackReset < 0)
+            if (newState > (50 * attackbonus) && attackReset < 0 && willToAttackBool)
             {
                 attack = true;
                 Attack();

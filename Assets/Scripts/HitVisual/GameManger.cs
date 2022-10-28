@@ -34,6 +34,16 @@ public class GameManger : MonoBehaviour
         }
     }
 
+    public void PostCritDamageCodeRight()
+    {
+        if (enemyMonsterMovement.fightHuman == false)
+        {
+            GameObject DamageTextInstance = Instantiate(damageTextPrefabRight, damageRightEnemy.transform);
+
+            DamageTextInstance.transform.GetChild(0).GetComponent<TextMeshPro>().SetText(("Crit ") + (enemyMonsterMovement.damage * 2).ToString());
+        }
+    }
+
     public void PostDamageCodeLeft()
     {
         if (enemyMovementStartRight.fightHuman == false)
@@ -41,6 +51,16 @@ public class GameManger : MonoBehaviour
            
             GameObject DamageTextInstance = Instantiate(damageTextPrefabLeft, enemyInstance.transform);
             DamageTextInstance.transform.GetChild(0).GetComponent<TextMeshPro>().SetText(enemyMovementStartRight.damage.ToString());
+        }
+    }
+
+    public void PostCritDamageCodeLeft()
+    {
+        if (enemyMovementStartRight.fightHuman == false)
+        {
+
+            GameObject DamageTextInstance = Instantiate(damageTextPrefabLeft, enemyInstance.transform);
+            DamageTextInstance.transform.GetChild(0).GetComponent<TextMeshPro>().SetText(("Crit ") + (enemyMovementStartRight.damage * 2).ToString());
         }
     }
 
@@ -55,5 +75,17 @@ public class GameManger : MonoBehaviour
     {
         GameObject DamageTextInstance = Instantiate(damageTextPrefabLeft, enemyInstance.transform);
         DamageTextInstance.transform.GetChild(0).GetComponent<TextMeshPro>().SetText("Dodge");
+    }
+
+    public void PostMissAttackRight()
+    {
+        GameObject DamageTextInstance = Instantiate(damageTextPrefabRight, damageRightEnemy.transform);
+        DamageTextInstance.transform.GetChild(0).GetComponent<TextMeshPro>().SetText("Miss");
+    }
+
+    public void PostMissAttackLeft()
+    {
+        GameObject DamageTextInstance = Instantiate(damageTextPrefabLeft, enemyInstance.transform);
+        DamageTextInstance.transform.GetChild(0).GetComponent<TextMeshPro>().SetText("Miss");
     }
 }
