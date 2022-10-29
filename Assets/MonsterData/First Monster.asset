@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: First Monster
   m_EditorClassIdentifier: 
   name: First
-  life: 1000
+  life: 500
   power: 500
   intelligence: 500
   skill: 400

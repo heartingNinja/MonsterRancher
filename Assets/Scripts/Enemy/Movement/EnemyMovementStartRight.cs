@@ -13,6 +13,15 @@ public class EnemyMovementStartRight : MonoBehaviour
     public int hitChanceForUI;
     [SerializeField] TextMeshProUGUI hitChanceText;
 
+    //Buttons
+    [SerializeField] Button closeAttackButton;
+    [SerializeField] Button closeMidAttackButton;
+    [SerializeField] Button farMidAttackButton;
+    [SerializeField] Button farAttackButton;
+
+    [SerializeField] ColorBlock PickedColor;
+    ColorBlock startColors;
+
     //Transform targetDestination;
     GameObject targetGameobject;
     [SerializeField] GameObject rightEdge;
@@ -35,7 +44,7 @@ public class EnemyMovementStartRight : MonoBehaviour
     public float damage = 100;
 
     [SerializeField] float timeForState = 2;
-    float sliderValue;
+    public float sliderValueDistancetoEnemy;
     [SerializeField] EnemyHealth enemyHealth;
     PlayerHealth playerHealth;
 
@@ -78,6 +87,8 @@ public class EnemyMovementStartRight : MonoBehaviour
 
     private void Awake()
     {
+        startColors = closeAttackButton.colors;
+
         enemyWill = GetComponent<EnemyWill>();
         rb = GetComponent<Rigidbody>();
         // targetGameobject = FindObjectOfType<MonsterMove>().gameObject;
@@ -139,6 +150,8 @@ public class EnemyMovementStartRight : MonoBehaviour
         }
 
         hitChanceText.text = hitChanceForUI.ToString();
+
+        TimeForAttackHighlighted();
     }
 
 
@@ -205,10 +218,13 @@ public class EnemyMovementStartRight : MonoBehaviour
             dodge = 0;
         }
 
-       
+        if (powerVsDefenseBonus < 20 && powerVsDefenseBonus > 0)
+        {
+            powerVsDefenseBonus = 20;
+        }
 
         // close
-        if (sliderValue < .25f)
+        if (sliderValueDistancetoEnemy < .25f)
         {
             willTaken = willCostClose;
 
@@ -244,9 +260,9 @@ public class EnemyMovementStartRight : MonoBehaviour
                 {
                     enemyDodge = false;
 
-                    if (powerVsDefenseBonus < 0)
+                    if (powerVsDefenseBonus <= 0)
                     {
-                        damage = damageStartValue + (powerVsDefenseBonus / 10);
+                        damage = damageStartValue + (powerVsDefenseBonus / 100);
 
                         if (damage > 0) // can not give negitive or 0 damage
                         {
@@ -255,8 +271,8 @@ public class EnemyMovementStartRight : MonoBehaviour
                     }
                     else
                     {
-                        damage = damageStartValue + powerVsDefenseBonus;
-                    }
+                        damage = damageStartValue * powerVsDefenseBonus / 20;
+                }
                 }
                 else
                 {
@@ -273,7 +289,7 @@ public class EnemyMovementStartRight : MonoBehaviour
         }
 
         // close mid
-        if (sliderValue >= .25f && sliderValue < .50f)
+        if (sliderValueDistancetoEnemy >= .25f && sliderValueDistancetoEnemy < .50f)
         {
             willTaken = willCostMidClose;
 
@@ -308,9 +324,9 @@ public class EnemyMovementStartRight : MonoBehaviour
                 {
                     enemyDodge = false;
 
-                    if (powerVsDefenseBonus < 0)
+                    if (powerVsDefenseBonus <= 0)
                     {
-                        damage = damageStartValue + (powerVsDefenseBonus / 10);
+                        damage = damageStartValue + (powerVsDefenseBonus / 100);
 
                         if (damage < 0)
                         {
@@ -319,7 +335,7 @@ public class EnemyMovementStartRight : MonoBehaviour
                     }
                     else
                     {
-                        damage = damageStartValue + powerVsDefenseBonus;
+                        damage = damageStartValue * powerVsDefenseBonus/20;
                     }
                 }
                 else
@@ -338,7 +354,7 @@ public class EnemyMovementStartRight : MonoBehaviour
         }
 
         // mid far
-        if (sliderValue >= .50f && sliderValue < .75f)
+        if (sliderValueDistancetoEnemy >= .50f && sliderValueDistancetoEnemy < .75f)
         {
             willTaken = willCostMidFar;
 
@@ -373,9 +389,9 @@ public class EnemyMovementStartRight : MonoBehaviour
                 {
                     enemyDodge = false;
 
-                    if (powerVsDefenseBonus < 0)
+                    if (powerVsDefenseBonus <= 0)
                     {
-                        damage = damageStartValue + (powerVsDefenseBonus / 10);
+                        damage = damageStartValue + (powerVsDefenseBonus / 100);
 
                         if (damage < 0)
                         {
@@ -384,8 +400,8 @@ public class EnemyMovementStartRight : MonoBehaviour
                     }
                     else
                     {
-                        damage = damageStartValue + powerVsDefenseBonus;
-                    }
+                        damage = damageStartValue * powerVsDefenseBonus / 20;
+                }
                 }
                 else
                 {
@@ -404,7 +420,7 @@ public class EnemyMovementStartRight : MonoBehaviour
         }
 
         // far
-        if (sliderValue >= .75f)
+        if (sliderValueDistancetoEnemy >= .75f)
         {
             willTaken = willCostFar;
 
@@ -443,9 +459,9 @@ public class EnemyMovementStartRight : MonoBehaviour
                 {
                     enemyDodge = false;
 
-                    if (powerVsDefenseBonus < 0)
+                    if (powerVsDefenseBonus <= 0)
                     {
-                        damage = damageStartValue + (powerVsDefenseBonus / 10);
+                        damage = damageStartValue + (powerVsDefenseBonus / 100);
 
                         if (damage < 0)
                         {
@@ -454,8 +470,8 @@ public class EnemyMovementStartRight : MonoBehaviour
                     }
                     else
                     {
-                        damage = damageStartValue + powerVsDefenseBonus;
-                    }
+                        damage = damageStartValue * powerVsDefenseBonus / 20;
+                }
                 }
                 else
                 {
@@ -583,7 +599,7 @@ public class EnemyMovementStartRight : MonoBehaviour
     void DistanceToEnemy()
     {
         distanceToPlayerSlider.value = (Mathf.Abs(targetGameobject.transform.position.x - transform.position.x)) / 20;
-        sliderValue = distanceToPlayerSlider.value;
+        sliderValueDistancetoEnemy = distanceToPlayerSlider.value;
     }
 
     private void MoveForward()
@@ -648,44 +664,55 @@ public class EnemyMovementStartRight : MonoBehaviour
         {
 
             rb.velocity = new Vector3(0, 0, 0);
-           // timeForState -= Time.deltaTime;
-
-        //    if (sliderValue < .25f)
-        //    {
-        //        GiveDamage(damage);
-       //         Debug.Log("Attack Close");
-       //         attack = false;
-       //     }
-
-       //     if (sliderValue >= .25f && sliderValue < .50f)
-      //      {
-      //          GiveDamage(damage);
-      //          Debug.Log("Attack Mid Close");
-      //          attack = false;
-      //      }
-
-     //       if (sliderValue >= .50f && sliderValue < .75f)
-     //       {
-      //          GiveDamage(damage);
-      //          Debug.Log("Attack Mid Far");
-      //          attack = false;
-    //        }
-
-    //        if (sliderValue >= .75f)
-    //        {
-    //            GiveDamage(damage);
-     //           Debug.Log("Attack Far");
-     //           attack = false;
-     //       }
+           
 
             GiveDamage(damage);
-            Debug.Log("Attack Far");
+            Debug.Log("Attack");
             attack = false;
 
             attackReset = .5f;
         }
 
 
+    }
+
+    void TimeForAttackHighlighted()
+    {
+        if (sliderValueDistancetoEnemy < .25f && attackReset > 0)
+        {
+            closeAttackButton.colors = PickedColor;
+        }
+        else
+        {
+            closeAttackButton.colors = startColors;
+        }
+
+        if (sliderValueDistancetoEnemy >= .25f && sliderValueDistancetoEnemy < .50f && attackReset > 0)
+        {
+            closeMidAttackButton.colors = PickedColor;
+        }
+        else
+        {
+            closeMidAttackButton.colors = startColors;
+        }
+
+        if (sliderValueDistancetoEnemy >= .50f && sliderValueDistancetoEnemy < .75f && attackReset > 0)
+        {
+            farMidAttackButton.colors = PickedColor;
+        }
+        else
+        {
+            farMidAttackButton.colors = startColors;
+        }
+
+        if (sliderValueDistancetoEnemy >= .75f && attackReset > 0)
+        {
+            farAttackButton.colors = PickedColor;
+        }
+        else
+        {
+            farAttackButton.colors = startColors;
+        }
     }
 
     public void NextState()

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class EnemyWill : MonoBehaviour
 {
@@ -10,6 +11,7 @@ public class EnemyWill : MonoBehaviour
     public float willMax = 100;
     public float willCurrent = 40;
     [SerializeField] float inscreaseWill = 1;
+    [SerializeField] TextMeshProUGUI willNumberText;
 
     private void Awake()
     {
@@ -21,6 +23,10 @@ public class EnemyWill : MonoBehaviour
     {
         willCurrent +=  (inscreaseWill * Time.deltaTime);
         willSlider.value = willCurrent;
+
+        int numberforWill = (int)willCurrent;
+
+        willNumberText.text = numberforWill.ToString();
 
         if(willCurrent >= willMax)
         {

@@ -6,9 +6,19 @@ using TMPro;
 
 public class EnemyMonsterMovement : MonoBehaviour
 {
+    //Player and Enemy
     [SerializeField] MakeMonsterSO thisMonsterStats;
     [SerializeField] MakeMonsterSO enemyMonsterStats;
 
+    //Buttons
+    [SerializeField] Button closeAttackButton;
+    [SerializeField] Button closeMidAttackButton;
+    [SerializeField] Button farMidAttackButton;
+    [SerializeField] Button farAttackButton;
+
+    [SerializeField] ColorBlock PickedColor;
+    ColorBlock startColors;
+  
     //Transform targetDestination;
     GameObject targetGameobject;
     [SerializeField] GameObject leftEdge;
@@ -16,10 +26,11 @@ public class EnemyMonsterMovement : MonoBehaviour
     [SerializeField] float speed = 4; // get this from scriptable object in future
     GameManger gameManger;
 
-                                      // the more health you have less attack you have, for less health of enemy more attack will be added for attackbonus;
-    [SerializeField] int attackbonus = 0; // if attackbonus increases it takes down wait chance. max will be 25 attack. This gives 50% attack and 50% move. 
+                                      
+    [SerializeField] float  attackbonus = 0; // attack bonus is increased by less health you *2 * attackBonuseMultiplier and enemy has * attackBonuseMultiplier, will left increases attack, the higher the attack bonus the less attack. Smaller is more attacks
     int attackBonuseMultiplier = 3;
     Rigidbody rb;
+
     bool moveForward;
     bool moveBackward;
     bool wait;
@@ -33,23 +44,25 @@ public class EnemyMonsterMovement : MonoBehaviour
     public float damage = 50;
 
     [SerializeField] float timeForState = 2;
-    float sliderValue;
+    public float sliderValueDistancetoEnemy;
     [SerializeField] EnemyHealth enemyHealth;
     PlayerHealth playerHealth;
 
     [SerializeField] float attackReset = .5f;
 
     EnemyHealth selfHealthEnemy;
-    EnemyWill enemyWill;
+   
 
+    //Power
    public int powerVsDefenseBonus; // = thisMonsterStats.power - enemyMonsterStats.defense; // sets increase to damage or decrease, can be 998+ to 998-
-   public int dodgeBonus; // = thisMonsterStats.skill - enemyMonsterStats.speed; // sets increase to dodge or decreae, can be 998+ to 998-
 
+    //Dodge
+   public int dodgeBonus; // = thisMonsterStats.speed - enemyMonsterStats.speed; // sets increase to dodge or decreae, can be 998+ to 998-
    public int dodgeBase = 100; // base dodge if speed an skill, 100 should be 10%
-   public int dodgeRollRandom; // =Random.Range(1, 1001); // what number will be choose to see if enemy dodges
-                               // public int dodge; // = dodgeBase + dodgeBonus; // increase or decrease to dodge
+   public int dodgeRollRandom; // =Random.Range(1, 1001); // what number will be choose to see if enemy dodges                             
     int dodge;
 
+    //Skill
     public int hitChanceForUI;
     [SerializeField] TextMeshProUGUI hitChanceText;
     public bool enemyMiss;
@@ -61,16 +74,19 @@ public class EnemyMonsterMovement : MonoBehaviour
     public int attackRandomRoll;
     public int hitChanceBonus;
 
+    //Will
+    EnemyWill enemyWill;
     int willCostClose;
     int willCostMidClose;
     int willCostMidFar;
     int willCostFar;
-
     public int willTaken;
     public bool willToAttackBool = true;
 
     private void Awake()
     {
+        startColors = closeAttackButton.colors;
+
         enemyWill = GetComponent<EnemyWill>();
         rb = GetComponent<Rigidbody>();
         gameManger = FindObjectOfType<GameManger>();
@@ -126,6 +142,8 @@ public class EnemyMonsterMovement : MonoBehaviour
         }
 
         hitChanceText.text = hitChanceForUI.ToString();
+
+        TimeForAttackHighlighted();
     }
 
    
@@ -159,12 +177,17 @@ public class EnemyMonsterMovement : MonoBehaviour
             increaseAttackOnEnemyHealth = (int)(enemyHealth.maxHealth / enemyHealth.currentHealth); // makes number bigger that 1 to mutiply with
 
             increaseAttackOnPlayerHealth = (int)(selfHealthEnemy.maxHealth / selfHealthEnemy.currentHealth);
-            attackbonus = increaseAttackOnEnemyHealth * attackBonuseMultiplier + increaseAttackOnPlayerHealth * attackBonuseMultiplier*2 - 4;
+            attackbonus = (100 - (increaseAttackOnEnemyHealth * attackBonuseMultiplier + increaseAttackOnPlayerHealth * attackBonuseMultiplier * 2 - 4 + enemyWill.willCurrent)) / 100;
         }
 
-        if(attackbonus >= 20)
+        if (attackbonus < 0)
         {
-            attackbonus = 20;
+            attackbonus = 0.01f;
+        }
+
+        if (attackbonus > 1)
+        {
+            attackbonus = 1;
         }
     }
 
@@ -176,6 +199,8 @@ public class EnemyMonsterMovement : MonoBehaviour
 
         attackRandomRoll = Random.Range(1, 101);
 
+       
+      
 
 
         dodge = dodgeBase + dodgeBonus; // increase or decrease to dodge
@@ -185,14 +210,19 @@ public class EnemyMonsterMovement : MonoBehaviour
             dodge = 0;
         }
 
+        if(powerVsDefenseBonus < 20 && powerVsDefenseBonus > 0)
+        {
+            powerVsDefenseBonus = 20;
+        }
 
 
         // close
-        if (sliderValue < .25f)
+        if (sliderValueDistancetoEnemy < .25f)
         {
-            willTaken = willCostClose;
+           
+           
 
-            if(willCostClose > enemyWill.willCurrent)
+            if (willCostClose > enemyWill.willCurrent)
             {
                 willToAttackBool = false;
             }
@@ -227,7 +257,7 @@ public class EnemyMonsterMovement : MonoBehaviour
             {
                 enemyDodge = false;
 
-                if (powerVsDefenseBonus < 0)
+                if (powerVsDefenseBonus <= 0)
                 {
                     damage = damageStartValue + (powerVsDefenseBonus / 10);
 
@@ -238,7 +268,7 @@ public class EnemyMonsterMovement : MonoBehaviour
                 }
                 else
                 {
-                    damage = damageStartValue + powerVsDefenseBonus;
+                    damage = damageStartValue * powerVsDefenseBonus/20; //+ powerVsDefenseBonus;
                 }
             }
             else
@@ -250,11 +280,14 @@ public class EnemyMonsterMovement : MonoBehaviour
           
            
         }
+       
 
         // mid close dodge miss and will
 
-        if (sliderValue >= .25f && sliderValue < .50f)
+        if (sliderValueDistancetoEnemy >= .25f && sliderValueDistancetoEnemy < .50f)
         {
+        
+
             willTaken = willCostMidClose;
 
             if (willCostMidClose > enemyWill.willCurrent)
@@ -289,7 +322,7 @@ public class EnemyMonsterMovement : MonoBehaviour
             {
                 enemyDodge = false;
 
-                if (powerVsDefenseBonus < 0)
+                if (powerVsDefenseBonus <= 0)
                 {
                     damage = damageStartValue + (powerVsDefenseBonus / 10);
 
@@ -300,7 +333,7 @@ public class EnemyMonsterMovement : MonoBehaviour
                 }
                 else
                 {
-                    damage = damageStartValue + powerVsDefenseBonus;
+                    damage = damageStartValue  *powerVsDefenseBonus / 20 ;
                 }
             }
             else
@@ -316,8 +349,9 @@ public class EnemyMonsterMovement : MonoBehaviour
 
         // mid far
 
-        if (sliderValue >= .50f && sliderValue < .75f)
-        {
+        if (sliderValueDistancetoEnemy >= .50f && sliderValueDistancetoEnemy < .75f)
+        {          
+
             willTaken = willCostMidFar;
 
             if (willCostMidFar > enemyWill.willCurrent)
@@ -352,7 +386,7 @@ public class EnemyMonsterMovement : MonoBehaviour
             {
                 enemyDodge = false;
 
-                if (powerVsDefenseBonus < 0)
+                if (powerVsDefenseBonus <= 0)
                 {
                     damage = damageStartValue + (powerVsDefenseBonus / 10);
 
@@ -363,7 +397,7 @@ public class EnemyMonsterMovement : MonoBehaviour
                 }
                 else
                 {
-                    damage = damageStartValue + powerVsDefenseBonus;
+                    damage = damageStartValue * powerVsDefenseBonus / 20; ;
                 }
             }
             else
@@ -378,8 +412,9 @@ public class EnemyMonsterMovement : MonoBehaviour
            
         }
 
-        if (sliderValue >= .75f)
-        {
+        if (sliderValueDistancetoEnemy >= .75f)
+        {        
+
             willTaken = willCostFar;
 
             if (willCostFar > enemyWill.willCurrent)
@@ -417,7 +452,7 @@ public class EnemyMonsterMovement : MonoBehaviour
             {
                 enemyDodge = false;
 
-                if (powerVsDefenseBonus < 0)
+                if (powerVsDefenseBonus <= 0)
                 {
                     damage = damageStartValue + (powerVsDefenseBonus / 10);
 
@@ -428,7 +463,7 @@ public class EnemyMonsterMovement : MonoBehaviour
                 }
                 else
                 {
-                    damage = damageStartValue + powerVsDefenseBonus;
+                    damage = damageStartValue * powerVsDefenseBonus / 20; ;
                 }
             }
             else
@@ -548,7 +583,48 @@ public class EnemyMonsterMovement : MonoBehaviour
     void DistanceToEnemy()
     {
         distanceToPlayerSlider.value = (Mathf.Abs(targetGameobject.transform.position.x - transform.position.x)) / 20;
-        sliderValue = distanceToPlayerSlider.value;
+        sliderValueDistancetoEnemy = distanceToPlayerSlider.value;
+
+    }
+
+    //HighlightButton
+    void TimeForAttackHighlighted()
+    {
+        if (sliderValueDistancetoEnemy < .25f && attackReset > 0)
+        {
+            closeAttackButton.colors = PickedColor;
+        }
+        else
+        {
+            closeAttackButton.colors = startColors;
+        }
+
+        if (sliderValueDistancetoEnemy >= .25f && sliderValueDistancetoEnemy < .50f && attackReset > 0)
+        {
+            closeMidAttackButton.colors = PickedColor;
+        }
+        else
+        {
+            closeMidAttackButton.colors = startColors;
+        }
+
+        if (sliderValueDistancetoEnemy >= .50f && sliderValueDistancetoEnemy < .75f && attackReset > 0) 
+        {
+            farMidAttackButton.colors = PickedColor;
+        }
+        else
+        {
+            farMidAttackButton.colors = startColors;
+        }
+
+        if(sliderValueDistancetoEnemy >= .75f && attackReset > 0)
+        {
+            farAttackButton.colors = PickedColor;
+        }
+        else
+        {
+            farAttackButton.colors = startColors;
+        }
     }
 
     private void MoveForward()
@@ -615,8 +691,8 @@ public class EnemyMonsterMovement : MonoBehaviour
             rb.velocity = new Vector3(0, 0, 0);
             timeForState -= Time.deltaTime;
 
-      
 
+            
             GiveDamage(damage);
             Debug.Log("Attack Close");
             attack = false;
@@ -627,6 +703,8 @@ public class EnemyMonsterMovement : MonoBehaviour
                
     }
 
+    
+
     public void NextState() 
     {
         float resetTimeForState = 2;
@@ -636,22 +714,22 @@ public class EnemyMonsterMovement : MonoBehaviour
         {
             int newState = Random.Range(1, 101);
                                
-            if(newState <=(20 - attackbonus))
+            if(newState <=(20 * attackbonus))
             {
                 wait = true;             
             }
 
-            if(newState >(20 -attackbonus) && newState <=(40 - attackbonus))
+            if(newState >(20  *attackbonus) && newState <=(40 * attackbonus))
             {
                 moveBackward = true;
             }
 
-            if(newState > (40- attackbonus) && newState <= (60-attackbonus))
+            if(newState > (40 * attackbonus) && newState <= (60 * attackbonus))
             {
                 moveForward = true;
             }
 
-            if(newState >(60- attackbonus) && attackReset < 0)
+            if(newState >(60 * attackbonus) && attackReset < 0 && willToAttackBool)
             {                
                 attack = true;
                 Attack();
@@ -676,7 +754,7 @@ public class EnemyMonsterMovement : MonoBehaviour
                 moveBackward = true;
             }
 
-            if(newState > (50 - attackbonus) && attackReset < 0)
+            if(newState > (50 * attackbonus) && attackReset < 0 && willToAttackBool)
             {
                 attack = true;
                 Attack();
