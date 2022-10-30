@@ -30,11 +30,18 @@ public class EnemyMonsterMovement : MonoBehaviour
     [SerializeField] float  attackbonus = 0; // attack bonus is increased by less health you *2 * attackBonuseMultiplier and enemy has * attackBonuseMultiplier, will left increases attack, the higher the attack bonus the less attack. Smaller is more attacks
     int attackBonuseMultiplier = 3;
     Rigidbody rb;
+    
+    //State
+    public bool moveForward;
+    public bool moveBackward;
+    public bool wait;
+    public bool attack;
 
-    bool moveForward;
-    bool moveBackward;
-    bool wait;
-    bool attack;
+    // how close to enemy
+    public bool closeToEnemy;
+    public bool midCloseEnemy;
+    public bool midFarEnemy;
+    public bool farEnemy;
 
     public bool enemyDodge;
 
@@ -577,7 +584,7 @@ public class EnemyMonsterMovement : MonoBehaviour
           
 
         
-        attack = false;
+       
     }
 
     void DistanceToEnemy()
@@ -593,37 +600,45 @@ public class EnemyMonsterMovement : MonoBehaviour
         if (sliderValueDistancetoEnemy < .25f && attackReset > 0)
         {
             closeAttackButton.colors = PickedColor;
+            closeToEnemy = true;
         }
         else
         {
             closeAttackButton.colors = startColors;
+            closeToEnemy = false;
         }
 
         if (sliderValueDistancetoEnemy >= .25f && sliderValueDistancetoEnemy < .50f && attackReset > 0)
         {
             closeMidAttackButton.colors = PickedColor;
+            midCloseEnemy = true;
         }
         else
         {
             closeMidAttackButton.colors = startColors;
+            midCloseEnemy = false;
         }
 
         if (sliderValueDistancetoEnemy >= .50f && sliderValueDistancetoEnemy < .75f && attackReset > 0) 
         {
             farMidAttackButton.colors = PickedColor;
+            midFarEnemy = true;
         }
         else
         {
             farMidAttackButton.colors = startColors;
+            midFarEnemy = false;
         }
 
         if(sliderValueDistancetoEnemy >= .75f && attackReset > 0)
         {
             farAttackButton.colors = PickedColor;
+            farEnemy = true;
         }
         else
         {
             farAttackButton.colors = startColors;
+            farEnemy = false;
         }
     }
 
@@ -695,7 +710,7 @@ public class EnemyMonsterMovement : MonoBehaviour
             
             GiveDamage(damage);
             Debug.Log("Attack Close");
-            attack = false;
+            
 
             attackReset = .5f;
         }
@@ -730,7 +745,7 @@ public class EnemyMonsterMovement : MonoBehaviour
             }
 
             if(newState >(60 * attackbonus) && attackReset < 0 && willToAttackBool)
-            {                
+            {
                 attack = true;
                 Attack();
             }

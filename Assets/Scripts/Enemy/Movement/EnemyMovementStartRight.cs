@@ -33,10 +33,19 @@ public class EnemyMovementStartRight : MonoBehaviour
     // if player has more health from start less attacking, if enemy has less health from start increase attacking. change the attackbonus
     [SerializeField] float attackbonus = 0; // if attackbonus increases it takes down wait chance. max will be 25 attack. This gives 50% attack and 50% move. 
     Rigidbody rb;
-    bool moveForward;
-    bool moveBackward;
-    bool wait;
-    bool attack;
+
+    // State
+   public bool moveForward;
+    public bool moveBackward;
+    public bool wait;
+   public bool attack;
+
+    // how close to enemy
+    public bool closeToEnemy;
+    public bool midCloseEnemy;
+    public bool midFarEnemy;
+    public bool farEnemy;
+
 
     int attackBonuseMultiplier = 3;
     public bool fightHuman;
@@ -668,8 +677,7 @@ public class EnemyMovementStartRight : MonoBehaviour
 
             GiveDamage(damage);
             Debug.Log("Attack");
-            attack = false;
-
+           
             attackReset = .5f;
         }
 
@@ -681,37 +689,45 @@ public class EnemyMovementStartRight : MonoBehaviour
         if (sliderValueDistancetoEnemy < .25f && attackReset > 0)
         {
             closeAttackButton.colors = PickedColor;
+            closeToEnemy = true;
         }
         else
         {
             closeAttackButton.colors = startColors;
+            closeToEnemy = false;
         }
 
         if (sliderValueDistancetoEnemy >= .25f && sliderValueDistancetoEnemy < .50f && attackReset > 0)
         {
             closeMidAttackButton.colors = PickedColor;
+            midCloseEnemy = true;
         }
         else
         {
             closeMidAttackButton.colors = startColors;
+            midCloseEnemy = false;
         }
 
         if (sliderValueDistancetoEnemy >= .50f && sliderValueDistancetoEnemy < .75f && attackReset > 0)
         {
             farMidAttackButton.colors = PickedColor;
+            midFarEnemy = true;
         }
         else
         {
             farMidAttackButton.colors = startColors;
+            midFarEnemy = false;
         }
 
         if (sliderValueDistancetoEnemy >= .75f && attackReset > 0)
         {
             farAttackButton.colors = PickedColor;
+            farEnemy = true;
         }
         else
         {
             farAttackButton.colors = startColors;
+            farEnemy = false;
         }
     }
 
